@@ -1,12 +1,11 @@
-from tkinter import * 
-from tkinter import filedialog
+from tkinter import Tk, Button, Label, filedialog
 import numpy as np
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
 NavigationToolbar2Tk)
-from tkinter.messagebox import showinfo
+from tkinter.messagebox import showinfo, askokcancel
 
 def OpenFile():
     filetypes = (
@@ -21,8 +20,13 @@ def OpenFile():
     fs, data = wavfile.read(filename[0])
     duration = len(data)/fs
     t = np.arange(0, duration, 1/fs)
-    
-    fig.add_subplot(111).plot(t,data)
+
+    fig_axis.set_title(filename[0])
+    fig_axis.set_ylabel('Amplitude')
+    fig_axis.set_xlabel('Time [s]')
+    plt.clf()
+    plt.plot(t,data)
+
     
     canvas.draw()
   
@@ -32,12 +36,16 @@ def OpenFile():
 
     canvas.get_tk_widget().pack()
 
+def OnClosing():
+    if askokcancel("Quit", "Do you want to quit?"):
+        main_window.destroy()
+
 main_window = Tk()  
 main_window.title('Plotting in Tkinter')
 main_window.geometry("500x500")
 
 
-fig = Figure(figsize=(5, 4), dpi=100)
+fig, fig_axis = plt.subplots(figsize = (5,4), dpi=100)
 canvas = FigureCanvasTkAgg(fig,master=main_window)  
 
 toolbar = NavigationToolbar2Tk(canvas,main_window)
@@ -49,5 +57,8 @@ open_button = Button(master = main_window,
                      text = "Open")
 
 open_button.pack()
-  
+
+
+main_window.protocol("WM_DELETE_WINDOW", OnClosing)
 main_window.mainloop()
+exit(0)
