@@ -1,6 +1,8 @@
+from multiprocessing.context import SpawnContext
 from tkinter import Tk, Button, filedialog, Frame
 from scipy.io import wavfile
 from scipy.fftpack import fft
+from scipy import signal
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -62,8 +64,8 @@ class Window():
             #
             # SIGNAL
             #
-            fs, data = wavfile.read(filename[0])
-            duration = len(data)/fs
+            fs, samples = wavfile.read(filename[0])
+            duration = len(samples)/fs
             t = np.arange(0, duration, 1/fs)
            
             self.fig1.clf()
@@ -71,7 +73,7 @@ class Window():
             self.fig_axis1.set_title(title[-1])
             self.fig_axis1.set_xlabel("Cas [s]")
             self.fig_axis1.set_ylabel("Amplituda")
-            self.fig_axis1.plot(t,data)
+            self.fig_axis1.plot(t,samples)
             self.fig1.tight_layout()
            
             self.canvas1.draw()
@@ -93,9 +95,9 @@ class Window():
             data_fft = fft(data_normalized)
             data_fft_len = len(data_fft)//2
             '''
-            data_channel = data.T[0]
+            data_channel = samples.T[0]
             data_fft = fft(data_channel)
-            
+            data_fft_len = len(data_fft)//2
 
             self.fig2.clf()
             self.fig_axis2 = self.fig2.add_subplot(111)
@@ -113,12 +115,18 @@ class Window():
             self.toolbar2.update()
             self.canvas2.get_tk_widget().grid(row=1, column=1)
 
+            #
+            # KRATKO ČASOVNA FOURIEROVA TRANS
+            #
+            freq, t, spectogram = signal.spectrogram(samples.T[0], fs)
+
             self.fig3.clf()
             self.fig_axis3 = self.fig3.add_subplot(111)
             self.fig_axis3.set_title(title[-1])
             self.fig_axis3.set_xlabel("Cas [s]")
-            self.fig_axis3.set_ylabel("Amplituda")
-            self.fig_axis3.plot(t,data)
+            self.fig_axis3.set_ylabel("Frekvenca [Hz]")
+            #self.fig_axis3.pcolormesh(t, freq, spectogram, shading='flat')
+            self.fig_axis3.specgram(samples.T[0], NFFT=1024, Fs=fs)
             self.fig3.tight_layout()
            
             self.canvas3.draw()
