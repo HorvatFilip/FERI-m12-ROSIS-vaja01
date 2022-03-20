@@ -1,64 +1,139 @@
-from tkinter import Tk, Button, Label, filedialog
-import numpy as np
+from tkinter import Tk, Button, filedialog, Frame
 from scipy.io import wavfile
+from scipy.fftpack import fft
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
-NavigationToolbar2Tk)
-from tkinter.messagebox import showinfo, askokcancel
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, 
+    NavigationToolbar2Tk
+)
 
-def OpenFile():
-    filetypes = (
-        ('audio files', '*.wav'),
-        ('All files', '*.*')
-    )
-    filename = filedialog.askopenfilenames(
-        title='Open wav file',
-        initialdir='./',
-        filetypes=filetypes
-    )
-    fs, data = wavfile.read(filename[0])
-    duration = len(data)/fs
-    t = np.arange(0, duration, 1/fs)
-
-    fig_axis.set_title(filename[0])
-    fig_axis.set_ylabel('Amplitude')
-    fig_axis.set_xlabel('Time [s]')
-    plt.clf()
-    plt.plot(t,data)
-
-    
-    canvas.draw()
   
-    canvas.get_tk_widget().pack()
+class Window():
+    def __init__(self):
+        self.main_window = Tk()  
+        self.main_window.title('Plotting in Tkinter')
+        self.main_window.geometry("1100x1000")
+
+        self.fig1 = Figure(figsize = (5,4), dpi=100)
+        self.fig2 = Figure(figsize = (5,4), dpi=100)
+        self.fig3 = Figure(figsize = (5,4), dpi=100)
+
+
+        self.canvas1 = FigureCanvasTkAgg(self.fig1,master=self.main_window) 
+        self.toolbar_frame1 = Frame(master=self.main_window)
+        self.toolbar1 = ''
+
+        self.canvas2 = FigureCanvasTkAgg(self.fig2,master=self.main_window) 
+        self.toolbar_frame2 = Frame(master=self.main_window)
+        self.toolbar2 = ''
+
+        self.canvas3 = FigureCanvasTkAgg(self.fig3,master=self.main_window) 
+        self.toolbar_frame3 = Frame(master=self.main_window)
+        self.toolbar3 = ''
+       
+        self.open_button = Button(master = self.main_window, 
+                             command = self.OpenFile,
+                             height = 2, 
+                             width = 10,
+                             text = "Open")
+
+        self.open_button.grid(column=0, row=0)
   
-    toolbar.update()
+        self.main_window.mainloop()
+  
+    def OpenFile(self):
+            filetypes = (
+                ('audio files', '*.wav'),
+                ('All files', '*.*')
+            )
+            filename = filedialog.askopenfilenames(
+                title='Open wav file',
+                initialdir='./audiofiles/',
+                filetypes=filetypes
+            )
+            if not filename:
+                return
+            title = filename[0].split('/')
+            
+            #
+            # SIGNAL
+            #
+            fs, data = wavfile.read(filename[0])
+            duration = len(data)/fs
+            t = np.arange(0, duration, 1/fs)
+           
+            self.fig1.clf()
+            self.fig_axis1 = self.fig1.add_subplot(111)
+            self.fig_axis1.set_title(title[-1])
+            self.fig_axis1.set_xlabel("Cas [s]")
+            self.fig_axis1.set_ylabel("Amplituda")
+            self.fig_axis1.plot(t,data)
+            self.fig1.tight_layout()
+           
+            self.canvas1.draw()
+            self.canvas1.get_tk_widget().grid(row=1, column=0)
+            self.toolbar_frame1.grid(row=2, column=0)
+            if not self.toolbar1:
+                self.toolbar1 = NavigationToolbar2Tk(self.canvas1,self.toolbar_frame1)
+            self.toolbar1.update()
+            self.canvas1.get_tk_widget().grid(row=1, column=0)
 
-    canvas.get_tk_widget().pack()
 
-def OnClosing():
-    if askokcancel("Quit", "Do you want to quit?"):
-        main_window.destroy()
+            #
+            # DFT
+            #
+            '''
+            data_normalized = data.T[0]
+            data_normalized = [(ele/2**16.)*2-1 for ele in data]
+            
+            data_fft = fft(data_normalized)
+            data_fft_len = len(data_fft)//2
+            '''
+            data_channel = data.T[0]
+            data_fft = fft(data_channel)
+            
 
-main_window = Tk()  
-main_window.title('Plotting in Tkinter')
-main_window.geometry("500x500")
+            self.fig2.clf()
+            self.fig_axis2 = self.fig2.add_subplot(111)
+            self.fig_axis2.set_title(title[-1])
+            self.fig_axis2.set_xlabel("Frekvenca [Hz]")
+            self.fig_axis2.set_ylabel("Amplituda")
+            self.fig_axis2.plot(abs(data_fft[:(data_fft_len-1)]))
+            self.fig2.tight_layout()
+           
+            self.canvas2.draw()
+            self.canvas2.get_tk_widget().grid(row=1, column=1)
+            self.toolbar_frame2.grid(row=2, column=1)
+            if not self.toolbar2:
+                self.toolbar2 = NavigationToolbar2Tk(self.canvas2,self.toolbar_frame2)
+            self.toolbar2.update()
+            self.canvas2.get_tk_widget().grid(row=1, column=1)
 
+            self.fig3.clf()
+            self.fig_axis3 = self.fig3.add_subplot(111)
+            self.fig_axis3.set_title(title[-1])
+            self.fig_axis3.set_xlabel("Cas [s]")
+            self.fig_axis3.set_ylabel("Amplituda")
+            self.fig_axis3.plot(t,data)
+            self.fig3.tight_layout()
+           
+            self.canvas3.draw()
+            self.canvas3.get_tk_widget().grid(row=3, column=0)
+            self.toolbar_frame3.grid(row=4, column=0)
+            if not self.toolbar3:
+                self.toolbar3 = NavigationToolbar2Tk(self.canvas3,self.toolbar_frame3)
+            self.toolbar3.update()
+            self.canvas3.get_tk_widget().grid(row=3, column=0)
+            
 
-fig, fig_axis = plt.subplots(figsize = (5,4), dpi=100)
-canvas = FigureCanvasTkAgg(fig,master=main_window)  
-
-toolbar = NavigationToolbar2Tk(canvas,main_window)
-
-open_button = Button(master = main_window, 
-                     command = OpenFile,
-                     height = 2, 
-                     width = 10,
-                     text = "Open")
-
-open_button.pack()
-
-
-main_window.protocol("WM_DELETE_WINDOW", OnClosing)
-main_window.mainloop()
-exit(0)
+    def Close(self):
+        #plt.close(self.fig)
+        self.main_window.destroy()
+  
+  
+# Running test window
+test = Window()
