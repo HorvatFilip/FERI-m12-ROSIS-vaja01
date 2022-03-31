@@ -1,7 +1,7 @@
 from multiprocessing.context import SpawnContext
 from tkinter import Tk, Button, filedialog, Frame
 from scipy.io import wavfile
-from scipy.fftpack import fft
+from scipy.fftpack import fft, fftfreq
 from scipy import signal
 import numpy as np
 import matplotlib
@@ -65,7 +65,7 @@ class Window():
             # SIGNAL
             #
             fs, samples = wavfile.read(filename[0])
-            duration = len(samples)/fs
+            duration = len(samples)//fs
             t = np.arange(0, duration, 1/fs)
            
             self.fig1.clf()
@@ -88,16 +88,15 @@ class Window():
             #
             # DFT
             #
-            data_channel = samples.T[0]
-            data_fft = fft(data_channel)
-            data_fft_len = len(data_fft)//2
+            y_fft = fft(samples)
+            x_fft = fftfreq(fs * duration, 1 / fs) 
 
             self.fig2.clf()
             self.fig_axis2 = self.fig2.add_subplot(111)
             self.fig_axis2.set_title(title[-1])
             self.fig_axis2.set_xlabel("Frekvenca [Hz]")
             self.fig_axis2.set_ylabel("Amplituda")
-            self.fig_axis2.plot(abs(data_fft[:(data_fft_len-1)]))
+            self.fig_axis2.plot(x_fft, np.abs(y_fft[:len(y_fft)//2]))
             self.fig2.tight_layout()
            
             self.canvas2.draw()
